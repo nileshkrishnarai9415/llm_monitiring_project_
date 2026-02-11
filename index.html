@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LLM System Monitoring</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+
+        input[type="file"] {
+            margin: 15px 0;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .section {
+            margin-top: 25px;
+        }
+
+        .alerts {
+            color: red;
+            font-weight: bold;
+        }
+
+        .analysis {
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+            color: green;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>LLM Based System Monitoring</h2>
+
+    <input type="file" id="fileInput" accept=".xlsx" />
+    <button onclick="uploadFile()">Analyze File</button>
+
+    <div class="loader" id="loader">Analyzing... Please wait ⏳</div>
+    <div class="error" id="error"></div>
+
+    <div class="section">
+        <h3>Alerts</h3>
+        <div id="alerts" class="alerts"></div>
+    </div>
+
+    <div class="section">
+        <h3>LLM Analysis</h3>
+        <div id="analysis" class="analysis"></div>
+    </div>
+</div>
+
+<script>
+
+function uploadFile() {
+
+    const fileInput = document.getElementById("fileInput");
+    const loader = document.getElementById("loader");
+    const errorDiv = document.getElementById("error");
+    const alertsDiv = document.getElementById("alerts");
+    const analysisDiv = document.getElementById("analysis");
+
+    errorDiv.innerText = "";
+    alertsDiv.innerHTML = "";
+    analysisDiv.innerText = "";
+
+    if (!fileInput.files.length) {
+        alert("Please select a file first!");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    loader.style.display = "block";
+
+    fetch("http://127.0.0.1:5000/analyze", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Server error");
+        }
+        return response.json();
+    })
+    .then(data => {
+
+        loader.style.display = "none";
+
+        if (data.error) {
+            errorDiv.innerText = data.error;
+            return;
+        }
+
+        if (data.alerts.length === 0) {
+            alertsDiv.innerHTML = "No alerts. System is healthy ✅";
+        } else {
+            alertsDiv.innerHTML = data.alerts.join("<br>");
+        }
+
+        analysisDiv.innerText = data.analysis;
+
+    })
+    .catch(error => {
+        loader.style.display = "none";
+        errorDiv.innerText = "Backend not responding!";
+        console.error(error);
+    });
+
+}
+
+</script>
+
+</body>
+</html>
